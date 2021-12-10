@@ -148,7 +148,7 @@ LRESULT CALLBACK ProcCallback(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 BOOL __stdcall myGetWindowBand(HWND hWnd, DWORD dwBand)
 {
     BOOL res = pGetWindowBand(hWnd, dwBand);
-    if (dwBand == 0x14) 
+    if (dwBand == 14) 
     {
         wchar_t wszWindowText[4096];
         GetWindowTextW(hWnd, wszWindowText, 4096);
