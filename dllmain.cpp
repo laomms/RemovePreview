@@ -29,8 +29,11 @@ extern "C" __declspec(dllexport) void Parsing()
 typedef BOOL(__stdcall* DGetWindowBand)(HWND hWnd, DWORD dwBand);
 DGetWindowBand pGetWindowBand = (DGetWindowBand)GetProcAddress(LoadLibraryW(L"user32.dll"), "GetWindowBand");
 
-typedef BOOL(__stdcall* DSetWindowBand)(HWND hWnd, DWORD dwBand);
+typedef BOOL(__stdcall* DSetWindowBand)(HWND hWnd, HWND hWndInsertAfter, DWORD dwBand);
 DSetWindowBand pSetWindowBand = (DSetWindowBand)GetProcAddress(LoadLibraryW(L"user32.dll"), "SetWindowBand");
+
+typedef HWND(WINAPI* DCreateWindowInBand)(DWORD dwExStyle, LPCWSTR lpClassName, LPCWSTR lpWindowName, DWORD dwStyle, int x, int y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam, DWORD dwBand);
+DCreateWindowInBand pCreateWindowInBand = (DCreateWindowInBand)GetProcAddress(LoadLibraryW(L"user32.dll"), "CreateWindowInBand");
 
 typedef int(WINAPI* DBrandingLoadString)(const wchar_t* lpBasebrd, unsigned int uid, wchar_t* lpBuffer, int size);
 DBrandingLoadString pBrandingLoadString = (DBrandingLoadString)GetProcAddress(LoadLibraryW(L"winbrand.dll"), "BrandingLoadString");
@@ -136,32 +139,28 @@ BOOL WINAPI myExtTextOutW(HDC hdc, int x, int y, UINT options, const RECT* lprec
     return res;
 }
 
-LRESULT CALLBACK ProcCallback(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_PAINT: 
-        {
-            return 0;
-         };
-    }
-    return WndProc(hWnd, msg, wParam, lParam);
-}
-BOOL __stdcall myGetWindowBand(HWND hWnd, DWORD dwBand)
+BOOL __stdcall myGetWindowBand(HWND hWnd, PDWORD pdwBand)
 {
-    BOOL res = pGetWindowBand(hWnd, dwBand);
-    if (dwBand == 14) 
+    DWORD dwBand = 0;
+    BOOL res = pGetWindowBand(hWnd, &dwBand);
+    if (dwBand == 14)
     {
-        wchar_t wszWindowText[4096];
-        GetWindowTextW(hWnd, wszWindowText, 4096);
-        std::wstringstream ss;
-        ss << "Function: " << __FUNCTION__ << " : " << dwBand << " : " << wszWindowText << "\n";
-        OutputDebugStringW(ss.str().c_str());
-        WNDPROC WndProc = (WNDPROC)GetWindowLongPtrW(hWnd, GWLP_WNDPROC);
-        SetWindowLongPtrW(hWnd, GWLP_WNDPROC, (LONG_PTR) ProcCallback);
+        //wchar_t wszWindowText[4096];
+        //GetWindowTextW(hWnd, wszWindowText, 4096);
+        //std::wstringstream ss;
+        //ss << "Function: " << __FUNCTION__ << " dwBand:" << dwBand << " hWnd:" << hWnd << " wszWindowText:" << wszWindowText << "\n";
+        //OutputDebugStringW(ss.str().c_str());
+        while (TRUE) {
+            LONG_PTR status = GetWindowLongPtrW(hWnd, GWL_STYLE);
+            if (status & WS_VISIBLE) {
+                pSetWindowBand(hWnd,0, 1);
+                ShowWindow(hWnd, SW_HIDE);
+                InvalidateRect(hWnd, NULL, TRUE);
+            }
+        }
     }
     return res;
 }
-
-
 
 void HookApi()
 {
@@ -173,7 +172,7 @@ void HookApi()
     DetourAttach(&(PVOID&)DGetDateFormatW, myGetDateFormatW);
     DetourAttach(&(PVOID&)DGetTimeFormatW, myGetTimeFormatW);
     DetourAttach(&(PVOID&)DExtTextOutW, myExtTextOutW);
-    DetourAttach(&(PVOID&)pGetWindowBand, myGetWindowBand);
+    //DetourAttach(&(PVOID&)pGetWindowBand, myGetWindowBand);
     DetourTransactionCommit();
 }
 
