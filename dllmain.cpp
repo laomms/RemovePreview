@@ -139,6 +139,7 @@ BOOL WINAPI myExtTextOutW(HDC hdc, int x, int y, UINT options, const RECT* lprec
     return res;
 }
 
+//HKEY_CURRENT_USER\Control Panel\Desktop\     "PaintDesktopVersion" change value to zero
 BOOL __stdcall myGetWindowBand(HWND hWnd, PDWORD pdwBand)
 {
     DWORD dwBand = 0;
